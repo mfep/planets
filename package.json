@@ -1,0 +1,17 @@
+{
+  "name": "planets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "planets.js",
+  "dependencies": {
+    "dat.gui": "^0.7.6",
+    "paper": "^0.12.3",
+    "seedrandom": "^3.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
