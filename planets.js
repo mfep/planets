@@ -1,5 +1,3 @@
-var globalRng = new Math.seedrandom(100);
-
 function cappedLine(p1, p2, offset)
 {
     p1 = new Point(p1);
@@ -16,9 +14,8 @@ function cappedLine(p1, p2, offset)
     return path;
 }
 
-function createRow(y, xstart, xend, layerSettings)
+function createRow(y, xstart, xend, layerSettings, rng)
 {
-    var rng = new Math.seedrandom(globalRng());
     var width = xend - xstart;
     var dx = width / layerSettings.horizontalFreq;
     var orderedCenters = [];
@@ -46,7 +43,7 @@ function createRow(y, xstart, xend, layerSettings)
 
 function createLayer(drawArea, layerSettings)
 {
-    var rng = new Math.seedrandom(1151);
+    var rng = new Math.seedrandom(layerSettings.seed);
     var path = new CompoundPath();
     var laneOffset = drawArea.height / layerSettings.laneCount;
     for (var laneIndex = 0; laneIndex < layerSettings.laneCount; ++laneIndex)
@@ -56,7 +53,7 @@ function createLayer(drawArea, layerSettings)
             continue;
         }
         var y = drawArea.top + (laneIndex + 0.5) * laneOffset;
-        path.addChild(createRow(y, drawArea.left, drawArea.right, layerSettings));
+        path.addChild(createRow(y, drawArea.left, drawArea.right, layerSettings, rng));
     }
     return path;
 }
@@ -64,6 +61,7 @@ function createLayer(drawArea, layerSettings)
 var LayerSetting = function()
 {
     this.solidColor = '#90EE90';
+    this.angle = 0;
     this.laneCount = 10;
     this.lineWidth = 5;
     this.laneProbability = 1;
@@ -71,32 +69,47 @@ var LayerSetting = function()
     this.horizontalProbability = 0.8;
     this.horizontalWidth = 1;
     this.horizontalRandomness = 0.2;
+    this.seed = 0;
+    this.shadowSetting = {
+        'shadowColor': '#0000FF',
+        'shadowBlur': 0
+    }
 };
 
 function render()
 {
     project.clear();
     var planetBase = new Path.Circle(drawArea.center, drawArea.width/2);
-    planetBase.fillColor = globalSettings.baseColor;
     layerSettings.forEach(function(layerSetting)
     {
         var layer = createLayer(drawArea, layerSetting);
+        layer.rotate(layerSetting.angle);
         layer = planetBase.intersect(layer);
         layer.fillColor = layerSetting.solidColor;
-    })
+        layer.shadowColor = layerSetting.shadowSetting.shadowColor;
+        layer.shadowBlur = layerSetting.shadowSetting.shadowBlur;
+    });
+    planetBase.fillColor = globalSettings.baseColor;
+    planetBase.shadowColor = globalSettings.atmosphereColor;
+    planetBase.shadowBlur = globalSettings.athmosphereSize;
 }
 
 function addLayerGui(gui, layerSetting, name)
 {
     var f = gui.addFolder(name);
+    f.add(layerSetting, 'seed').onFinishChange(render);
     f.addColor(layerSetting, 'solidColor').onFinishChange(render);
-    f.add(layerSetting, 'laneCount', 1, 30).onFinishChange(render);
-    f.add(layerSetting, 'lineWidth', 1, 15).onFinishChange(render);
+    f.add(layerSetting, 'angle', 0, 360).onFinishChange(render);
+    f.add(layerSetting, 'laneCount', 1, 15).onFinishChange(render);
+    f.add(layerSetting, 'lineWidth', 1, 50).onFinishChange(render);
     f.add(layerSetting, 'laneProbability', 0, 1).onFinishChange(render);
-    f.add(layerSetting, 'horizontalFreq', 1, 50).onFinishChange(render);
+    f.add(layerSetting, 'horizontalFreq', 1, 30).onFinishChange(render);
     f.add(layerSetting, 'horizontalProbability', 0, 1).onFinishChange(render);
     f.add(layerSetting, 'horizontalWidth', 1, 100).onFinishChange(render);
     f.add(layerSetting, 'horizontalRandomness', 0, 1).onFinishChange(render);
+    var shadowSettings = f.addFolder('shadow');
+    shadowSettings.addColor(layerSetting.shadowSetting, 'shadowColor').onFinishChange(render)
+    shadowSettings.add(layerSetting.shadowSetting, 'shadowBlur', 0, 25).onFinishChange(render)
 }
 
 var drawArea = new Rectangle(50, 50, 300, 300);
@@ -104,6 +117,8 @@ var layerSettings = [];
 var layerIndex = 0;
 var globalSettings = {
     baseColor: "#000000",
+    atmosphereColor: '#000000',
+    athmosphereSize: 0,
     addNewLayer: function()
     {
         var newSetting = new LayerSetting();
@@ -116,4 +131,6 @@ var globalSettings = {
 var gui = new dat.GUI();
 gui.width = 600;
 gui.addColor(globalSettings, 'baseColor').onFinishChange(render);
+gui.addColor(globalSettings, 'atmosphereColor').onFinishChange(render);
+gui.add(globalSettings, 'athmosphereSize', 0, 50).onFinishChange(render);
 gui.add(globalSettings, 'addNewLayer').onFinishChange(render);
