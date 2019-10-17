@@ -55,7 +55,16 @@ function createLayer(drawArea, layerSettings)
         var y = drawArea.top + (laneIndex + 0.5) * laneOffset;
         path.addChild(createRow(y, drawArea.left, drawArea.right, layerSettings, rng));
     }
+    sanitizePath(path);
     return path;
+}
+
+function sanitizePath(compoundPath) {
+    compoundPath.children.forEach(function (path) {
+        if (path.segments.length <= 1) {
+            path.remove();
+        }
+    });
 }
 
 var LayerSetting = function()
@@ -73,7 +82,7 @@ var LayerSetting = function()
     this.shadowSetting = {
         'shadowColor': '#0000FF',
         'shadowBlur': 0
-    }
+    };
 };
 
 function render()
@@ -110,6 +119,26 @@ function addLayerGui(gui, layerSetting, name)
     var shadowSettings = f.addFolder('shadow');
     shadowSettings.addColor(layerSetting.shadowSetting, 'shadowColor').onFinishChange(render)
     shadowSettings.add(layerSetting.shadowSetting, 'shadowBlur', 0, 25).onFinishChange(render)
+    layerSetting.delete = function()
+    {
+        layerSettings = layerSettings.filter(function(currentSetting)
+        {
+            return currentSetting !== layerSetting;
+        });
+        gui.removeFolder(f);
+    };
+    layerSetting.moveUp = function()
+    {
+        var currentIndex = layerSettings.findIndex(function(currentSetting) { return currentSetting === layerSetting; });
+        if (currentIndex > 0)
+        {
+            var tmpSetting = layerSettings[currentIndex - 1];
+            layerSettings[currentIndex - 1] = layerSetting;
+            layerSettings[currentIndex] = tmpSetting;
+        }
+    };
+    f.add(layerSetting, 'delete').onFinishChange(render);
+    f.add(layerSetting, 'moveUp').onFinishChange(render);
 }
 
 var drawArea = new Rectangle(50, 50, 300, 300);
