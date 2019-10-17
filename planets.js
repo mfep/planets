@@ -88,10 +88,11 @@ var LayerSetting = function()
 function render()
 {
     project.clear();
-    var planetBase = new Path.Circle(drawArea.center, drawArea.width/2);
+    var planetArea = drawArea.scale(0.7);
+    var planetBase = new Path.Circle(planetArea.center, planetArea.width * 0.5);
     layerSettings.forEach(function(layerSetting)
     {
-        var layer = createLayer(drawArea, layerSetting);
+        var layer = createLayer(planetArea, layerSetting);
         layer.rotate(layerSetting.angle);
         layer = planetBase.intersect(layer);
         layer.fillColor = layerSetting.solidColor;
@@ -141,10 +142,17 @@ function addLayerGui(gui, layerSetting, name)
     f.add(layerSetting, 'moveUp').onFinishChange(render);
 }
 
-var drawArea = new Rectangle(50, 50, 300, 300);
+function resizeDraw()
+{
+    paper.view.viewSize = new Size(globalSettings.drawSize, globalSettings.drawSize);
+    drawArea = new Rectangle(0, 0, globalSettings.drawSize, globalSettings.drawSize);
+    render();
+}
+
 var layerSettings = [];
 var layerIndex = 0;
 var globalSettings = {
+    drawSize: 300,
     baseColor: "#000000",
     atmosphereColor: '#000000',
     athmosphereSize: 0,
@@ -156,9 +164,12 @@ var globalSettings = {
         layerIndex += 1;
     }
 };
+var drawArea = null;
+resizeDraw();
 
 var gui = new dat.GUI();
 gui.width = 600;
+gui.add(globalSettings, 'drawSize', 200, 600).onFinishChange(resizeDraw);
 gui.addColor(globalSettings, 'baseColor').onFinishChange(render);
 gui.addColor(globalSettings, 'atmosphereColor').onFinishChange(render);
 gui.add(globalSettings, 'athmosphereSize', 0, 50).onFinishChange(render);
